@@ -1,0 +1,107 @@
+import React, { useState } from 'react';
+import { 
+  Card, 
+  CardContent, 
+  CardActions, 
+  CardMedia, 
+  Typography, 
+  IconButton, 
+  TextField, 
+  Box 
+} from '@mui/material';
+import { Favorite, Comment, Send } from '@mui/icons-material';
+
+const Blink = ({ blink }) => {
+  const [showComments, setShowComments] = useState(false);
+  const [newComment, setNewComment] = useState('');
+
+  const handleLike = () => {
+    // Implement like functionality
+    console.log('Like clicked');
+  };
+
+  const handleAddComment = () => {
+    if (newComment.trim()) {
+      // Implement comment functionality
+      console.log('Adding comment:', newComment);
+      setNewComment('');
+    }
+  };
+  
+  if (!blink) return null;
+
+  return (
+    <Card sx={{ marginBottom: '1rem' }}>
+      <CardContent>
+        <Typography variant="h6" component="h2">
+          {blink.userId?.name || 'Anonymous'}
+        </Typography>
+        
+        <Typography color="textSecondary" gutterBottom>
+          {new Date(blink.createdAt).toLocaleDateString()}
+        </Typography>
+        
+        <Typography variant="body2" component="p" sx={{ marginBottom: 1 }}>
+          {blink.content}
+        </Typography>
+        
+        {blink.mediaDataUrl && (
+          <Box sx={{ mt: 2, mb: 2 }}>
+            {blink.mediaType === 'image' ? (
+              <CardMedia
+                component="img"
+                image={blink.mediaDataUrl}
+                alt="Blink media"
+                sx={{ maxHeight: 400, objectFit: 'contain' }}
+              />
+            ) : blink.mediaType === 'video' ? (
+              <CardMedia
+                component="video"
+                src={blink.mediaDataUrl}
+                controls
+                sx={{ maxHeight: 400, width: '100%' }}
+              />
+            ) : null}
+          </Box>
+        )}
+      </CardContent>
+
+      <CardActions disableSpacing>
+        <IconButton 
+          onClick={handleLike} 
+          color="primary" 
+          aria-label="like"
+        >
+          <Favorite />
+        </IconButton>
+        <IconButton 
+          onClick={() => setShowComments(!showComments)} 
+          color="primary" 
+          aria-label="comment"
+        >
+          <Comment />
+        </IconButton>
+      </CardActions>
+
+      {showComments && (
+        <CardContent>
+          <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+            <TextField
+              fullWidth
+              size="small"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Add a comment..."
+              variant="outlined"
+            />
+            <IconButton onClick={handleAddComment} color="primary">
+              <Send />
+            </IconButton>
+          </Box>
+        </CardContent>
+      )}
+    </Card>
+  );
+};
+
+export default Blink;
