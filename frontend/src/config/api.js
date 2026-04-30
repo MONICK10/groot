@@ -51,6 +51,3 @@ export const handleApiError = async (error, retryCount = 0) => {
   }
   return 'Unable to connect to server. Please try again.';
 };
-  }
-  return 'Unable to connect to server. Please try again.';
-};
