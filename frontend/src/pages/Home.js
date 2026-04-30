@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Container, CircularProgress, Box, Alert } from '@mui/material';
-import axios from 'axios';
+import { api, endpoints } from '../config/api';
 import Blink from '../components/Blink';
 import CreateBlink from '../components/CreateBlink';
-import { endpoints } from '../config/api';
 
 const Home = () => {
   const [blinks, setBlinks] = useState([]);
@@ -13,7 +12,7 @@ const Home = () => {
   const fetchBlinks = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(endpoints.blinks);
+      const response = await api.get(endpoints.blinks);
       setBlinks(response.data);
       setError('');
     } catch (error) {

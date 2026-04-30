@@ -16,10 +16,9 @@ import {
   EmojiEmotions,
   Close as CloseIcon
 } from '@mui/icons-material';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import EmojiPicker from 'emoji-picker-react';
-import { endpoints } from '../config/api';
+import { api, endpoints } from '../config/api';
 
 const CreateBlink = ({ onBlinkCreated }) => {
   const [content, setContent] = useState('');
@@ -61,7 +60,7 @@ const CreateBlink = ({ onBlinkCreated }) => {
         formData.append('mediaType', mediaType);
       }
 
-      await axios.post(endpoints.blinks, formData, {
+      await api.post(endpoints.blinks, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

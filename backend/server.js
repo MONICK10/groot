@@ -27,6 +27,7 @@ const corsOptions = {
   origin: function(origin, callback) {
     const allowedOrigins = [
       'http://localhost:3000',
+      'https://groot-frontend.onrender.com',
       'https://iamgroot-214e3.web.app',
       'https://iamgroot-214e3.firebaseapp.com'
     ];
@@ -193,8 +194,8 @@ app.get('/api/blinks', async (req, res) => {
     const result = blinks.map((b) => {
       const obj = b.toObject();
       // Construct full URL for media if it exists
-      if (obj.mediaUrl) {
-        obj.mediaDataUrl = `${process.env.BACKEND_URL || 'https://newbackend-9u98.onrender.com'}/uploads/${obj.mediaUrl}`;
+      if (obj.mediaUrl && process.env.BACKEND_URL) {
+        obj.mediaDataUrl = `${process.env.BACKEND_URL}/uploads/${obj.mediaUrl}`;
       }
       return obj;
     });
@@ -260,106 +261,9 @@ app.get('/api/friend-requests/check/:fromUserId/:toUserId', async (req, res) => 
 
     // No relationship exists
     return res.json({ status: 'none' });
-
-    res.json({ status, requestId });
   } catch (err) {
     console.error('Error checking friend request:', err);
     res.status(500).json({ message: 'Error checking friend request status' });
-  }
-});
-
-// Send Friend Request
-app.post('/api/friend-request', async (req, res) => {
-  try {
-    const { fromUser, toUser } = req.body;
-
-    if (!fromUser || !toUser) {
-      return res.status(400).json({ message: 'Both fromUser and toUser are required' });
-    }
-    if (fromUser === toUser) {
-      return res.status(400).json({ message: 'Cannot send request to yourself' });
-    }
-
-    // Already friends?
-    const sender = await User.findById(fromUser);
-    if (sender.friends.includes(toUser)) {
-      return res.status(400).json({ message: 'Already friends' });
-    }
-
-    // Check if pending
-    const existingRequest = await FriendRequest.findOne({
-      fromUser,
-      toUser,
-      status: 'pending',
-    });
-
-    if (existingRequest) {
-      return res.status(400).json({ message: 'Friend request already sent' });
-    }
-
-    const newRequest = new FriendRequest({ fromUser, toUser });
-    await newRequest.save();
-
-    res.status(201).json({ message: 'Friend request sent successfully', requestId: newRequest._id });
-  } catch (err) {
-    console.error('Error sending friend request:', err);
-    res.status(500).json({ message: 'Error sending friend request' });
-  }
-});
-
-// Cancel (delete) a pending friend request
-app.delete('/api/friend-request/:requestId', async (req, res) => {
-  try {
-    const { requestId } = req.params;
-    const request = await FriendRequest.findById(requestId);
-
-    if (!request) return res.status(404).json({ message: 'Friend request not found' });
-    if (request.status !== 'pending')
-      return res.status(400).json({ message: 'Only pending requests can be cancelled' });
-
-    await FriendRequest.findByIdAndDelete(requestId);
-    res.json({ message: 'Friend request cancelled' });
-  } catch (err) {
-    console.error('Error cancelling friend request:', err);
-    res.status(500).json({ message: 'Error cancelling friend request' });
-  }
-});
-
-// Get All Pending Friend Requests for a User
-app.get('/api/friend-requests/:userId', async (req, res) => {
-  try {
-    const requests = await FriendRequest.find({
-      toUser: req.params.userId,
-      status: 'pending',
-    }).populate('fromUser', 'name email');
-
-    res.json(requests);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Error fetching friend requests' });
-  }
-});
-
-// Accept / Reject Friend Request
-app.put('/api/friend-request/:requestId', async (req, res) => {
-  try {
-    const { status } = req.body;
-    const request = await FriendRequest.findById(req.params.requestId);
-
-    if (!request) return res.status(404).json({ message: 'Friend request not found' });
-
-    request.status = status;
-    await request.save();
-
-    if (status === 'accepted') {
-      await User.findByIdAndUpdate(request.fromUser, { $addToSet: { friends: request.toUser } });
-      await User.findByIdAndUpdate(request.toUser, { $addToSet: { friends: request.fromUser } });
-    }
-
-    res.json({ message: `Friend request ${status}` });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Error updating friend request' });
   }
 });
 

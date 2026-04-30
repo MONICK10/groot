@@ -1,5 +1,21 @@
-// API base URL
-export const API_BASE_URL = 'https://newbackend-9u98.onrender.com';
+import axios from 'axios';
+
+// ========================================
+// API CONFIGURATION
+// ========================================
+// Get API URL from environment variables
+// For development: http://localhost:5000 (from .env.development)
+// For production: https://groot-kscp.onrender.com (from .env.production)
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+// Create centralized axios instance
+export const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
 
 // Axios configuration with retry logic for Render's cold start
 export const axiosConfig = {
@@ -8,15 +24,15 @@ export const axiosConfig = {
   maxRetries: 3
 };
 
-// API endpoints
+// API endpoints - now using environment-based baseURL
 export const endpoints = {
-  login: `${API_BASE_URL}/api/login`,
-  signup: `${API_BASE_URL}/api/signup`,
-  blinks: `${API_BASE_URL}/api/blinks`,
-  users: `${API_BASE_URL}/api/users`,
-  friendRequests: `${API_BASE_URL}/api/friend-requests`,
-  friendRequest: `${API_BASE_URL}/api/friend-request`,
-  friends: `${API_BASE_URL}/api/friends`,
+  login: '/api/login',
+  signup: '/api/signup',
+  blinks: '/api/blinks',
+  users: '/api/users',
+  friendRequests: '/api/friend-requests',
+  friendRequest: '/api/friend-request',
+  friends: '/api/friends',
 };
 
 // Helper function to handle API errors with retry logic
@@ -32,6 +48,9 @@ export const handleApiError = async (error, retryCount = 0) => {
 
   if (error.response?.data?.message) {
     return error.response.data.message;
+  }
+  return 'Unable to connect to server. Please try again.';
+};
   }
   return 'Unable to connect to server. Please try again.';
 };

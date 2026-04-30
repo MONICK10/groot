@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { TextField, Button, Paper, Typography, Link, Alert, CircularProgress } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { endpoints, handleApiError } from '../config/api';
+import { api, endpoints, handleApiError } from '../config/api';
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -34,7 +33,7 @@ const SignUp = () => {
     }
 
     try {
-      const response = await axios.post(endpoints.signup, {
+      const response = await api.post(endpoints.signup, {
         name: formData.name,
         email: formData.email,
         password: formData.password

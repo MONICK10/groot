@@ -13,8 +13,7 @@ import {
   Box
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { endpoints, handleApiError } from '../config/api';
+import { api, endpoints, handleApiError } from '../config/api';
 
 const Login = ({ setIsAuthenticated }) => {
   const [formData, setFormData] = useState({
@@ -39,7 +38,7 @@ const Login = ({ setIsAuthenticated }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post(endpoints.login, formData);
+      const response = await api.post(endpoints.login, formData);
       
       // Store user data
       const userData = {
