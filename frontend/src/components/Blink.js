@@ -12,7 +12,7 @@ import {
   Alert,
   CircularProgress
 } from '@mui/material';
-import { endpoints } from '../config/api';
+import { api, endpoints } from '../config/api';
 import {
   Favorite,
   Comment,
@@ -42,16 +42,11 @@ const Blink = ({ blink }) => {
   const checkRequestStatus = async () => {
     if (!userData.id || isOwnPost) return;
     try {
-      const response = await fetch(
+      const response = await api.get(
         `${endpoints.friendRequests}/check/${userData.id}/${blink.userId._id}`
       );
-      if (response.ok) {
-        const { status, requestId } = await response.json();
-        setRequestStatus(status || 'none');
-        setRequestId(requestId || null);
-      } else {
-        console.error('Failed to check friend status:', response.status);
-      }
+      setRequestStatus(response.data.status || 'none');
+      setRequestId(response.data.requestId || null);
     } catch (err) {
       console.error('Error checking request status:', err);
     }
@@ -95,35 +90,19 @@ const Blink = ({ blink }) => {
         return;
       }
 
-      const response = await fetch(endpoints.friendRequest, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          fromUser: userData.id,
-          toUser: blink.userId._id
-        })
+      const data = await api.post(endpoints.friendRequest, {
+        fromUser: userData.id,
+        toUser: blink.userId._id
       });
 
-      const data = await response.json();
       console.log('Server response:', data);
 
-      if (response.ok) {
-        setRequestStatus('pending');
-        if (data.requestId) setRequestId(data.requestId);
-        setInfo('Friend request sent successfully!');
-      } else {
-        const errorMsg = data.message || 'Failed to send friend request';
-        setError(errorMsg);
-        console.error('Error response:', {
-          status: response.status,
-          statusText: response.statusText,
-          data: data
-        });
-      }
+      setRequestStatus('pending');
+      if (data.data.requestId) setRequestId(data.data.requestId);
+      setInfo('Friend request sent successfully!');
     } catch (error) {
-      setError('Error sending friend request');
+      const errorMsg = error.response?.data?.message || 'Failed to send friend request';
+      setError(errorMsg);
       console.error('Error:', error);
     } finally {
       setLoading(false);
@@ -143,21 +122,14 @@ const Blink = ({ blink }) => {
       setError(null);
       setInfo(null);
 
-      const response = await fetch(
-        `${endpoints.friendRequest}/${requestId}`,
-        { method: 'DELETE' }
-      );
-      const data = await response.json();
+      const data = await api.delete(`${endpoints.friendRequest}/${requestId}`);
       console.log('Cancel response:', data);
-      if (response.ok) {
-        setRequestStatus('none');
-        setRequestId(null);
-        setInfo('Friend request cancelled');
-      } else {
-        setError(data.message || 'Failed to cancel request');
-      }
+      
+      setRequestStatus('none');
+      setRequestId(null);
+      setInfo('Friend request cancelled');
     } catch (err) {
-      setError('Error cancelling friend request');
+      setError(err.response?.data?.message || 'Error cancelling friend request');
       console.error('Error cancelling request:', err);
     } finally {
       setLoading(false);
@@ -172,25 +144,13 @@ const Blink = ({ blink }) => {
       setError(null);
       setInfo(null);
 
-      const response = await fetch(endpoints.friends, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: userData.id,
-          friendId: blink.userId._id
-        })
-      });
-
-      const data = await response.json();
+      const data = await api.delete(`${endpoints.friends}/${userData.id}/${blink.userId._id}`);
       console.log('Remove friend response:', data);
-      if (response.ok) {
-        setRequestStatus('none');
-        setInfo('Removed from friends');
-      } else {
-        setError(data.message || 'Failed to remove friend');
-      }
+      
+      setRequestStatus('none');
+      setInfo('Removed from friends');
     } catch (err) {
-      setError('Error removing friend');
+      setError(err.response?.data?.message || 'Error removing friend');
       console.error('Error removing friend:', err);
     } finally {
       setLoading(false);

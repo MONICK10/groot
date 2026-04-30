@@ -24,7 +24,7 @@ import {
   ExpandMore,
   PersonRemove
 } from '@mui/icons-material';
-import { endpoints, handleApiError } from '../config/api';
+import { api, endpoints, handleApiError } from '../config/api';
 
 const Profile = () => {
   const [profileImage, setProfileImage] = useState(null);
@@ -51,16 +51,10 @@ const Profile = () => {
 
   const fetchUserData = async (retryCount = 0) => {
     try {
-      const response = await fetch(`${endpoints.users}/${userData.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setUserName(data.name);
-        setFriends(data.friends || []);
-        setError('');
-      } else {
-        const errorMessage = await response.text();
-        throw new Error(errorMessage);
-      }
+      const response = await api.get(`${endpoints.users}/${userData.id}`);
+      setUserName(response.data.name);
+      setFriends(response.data.friends || []);
+      setError('');
     } catch (error) {
       const result = await handleApiError(error, retryCount);
       if (result === 'retrying') {
@@ -73,15 +67,9 @@ const Profile = () => {
 
   const fetchFriendRequests = async (retryCount = 0) => {
     try {
-      const response = await fetch(`${endpoints.friendRequests}/${userData.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setFriendRequests(data);
-        setError('');
-      } else {
-        const errorMessage = await response.text();
-        throw new Error(errorMessage);
-      }
+      const response = await api.get(`${endpoints.friendRequests}/${userData.id}`);
+      setFriendRequests(response.data);
+      setError('');
     } catch (error) {
       const result = await handleApiError(error, retryCount);
       if (result === 'retrying') {
@@ -101,52 +89,39 @@ const Profile = () => {
 
       console.log('Accepting request from:', request); // Debug log
 
-      const response = await fetch(
+      const response = await api.put(
         `${endpoints.friendRequest}/${request._id}`,
         {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            fromUser: request.fromUser._id, // The sender's ID
-            toUser: userData.id,           // Current user's ID (receiver)
-            status
-          })
+          fromUser: request.fromUser._id, // The sender's ID
+          toUser: userData.id,           // Current user's ID (receiver)
+          status
         }
       );
-
-      const data = await response.json();
       
-      if (response.ok) {
-        // Update local state
-        setFriendRequests((prevRequests) =>
-          prevRequests.filter((r) => r._id !== request._id)
-        );
-        
-        if (status === 'accepted') {
-          // Add the new friend to the friends list
-          const newFriend = {
-            _id: request.fromUser._id,
-            name: request.fromUser.name,
-            email: request.fromUser.email,
-            profileImage: request.fromUser.profileImage
-          };
-          setFriends(prevFriends => [...prevFriends, newFriend]);
-          setInfo('✅ Friend request accepted');
-        } else {
-          setInfo('❌ Friend request rejected');
-        }
-        
-        // Refresh data
-        fetchUserData();
+      // Update local state
+      setFriendRequests((prevRequests) =>
+        prevRequests.filter((r) => r._id !== request._id)
+      );
+      
+      if (status === 'accepted') {
+        // Add the new friend to the friends list
+        const newFriend = {
+          _id: request.fromUser._id,
+          name: request.fromUser.name,
+          email: request.fromUser.email,
+          profileImage: request.fromUser.profileImage
+        };
+        setFriends(prevFriends => [...prevFriends, newFriend]);
+        setInfo('✅ Friend request accepted');
       } else {
-        console.error('Server error:', data); // Debug log
-        setError(data.message || 'Failed to update friend request');
+        setInfo('❌ Friend request rejected');
       }
+      
+      // Refresh data
+      fetchUserData();
     } catch (error) {
       console.error('Error updating friend request:', error);
-      setError('Error updating friend request');
+      setError(error.response?.data?.message || 'Error updating friend request');
     } finally {
       setLoading(false);
       setTimeout(fetchFriendRequests, 600);
@@ -160,25 +135,13 @@ const Profile = () => {
       setError('');
       setInfo('');
 
-      const response = await fetch(endpoints.friends, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: userData.id,
-          friendId
-        })
-      });
+      await api.delete(`${endpoints.friends}/${userData.id}/${friendId}`);
 
-      const data = await response.json();
-      if (response.ok) {
-        setFriends((prev) => prev.filter((f) => f._id !== friendId));
-        setInfo('Friend removed successfully');
-      } else {
-        setError(data.message || 'Failed to remove friend');
-      }
+      setFriends((prev) => prev.filter((f) => f._id !== friendId));
+      setInfo('Friend removed successfully');
     } catch (error) {
       console.error('Error removing friend:', error);
-      setError('Error removing friend');
+      setError(error.response?.data?.message || 'Error removing friend');
     } finally {
       setLoading(false);
       setTimeout(fetchUserData, 600);
